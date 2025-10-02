@@ -22,4 +22,13 @@ dependencyResolutionManagement {
 
 rootProject.name = "Stable VPN"
 include(":app")
-include(":vpnLib")
+include(":data")
+include(":app:data")
+include(":app:domain")
+include(":app:presentation")
+include(":countries")
+include(":countries:data")
+include(":countries:domain")
+include(":vpn")
+include(":vpn:data")
+include(":vpn:domain")

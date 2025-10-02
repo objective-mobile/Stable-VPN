@@ -30,15 +30,6 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-
     buildFeatures {
         compose = true
         aidl = true
@@ -46,7 +37,10 @@ android {
 }
 
 dependencies {
-    implementation(project(path= ":vpnLib"))
+    implementation(project(":app:presentation"))
+    implementation(project(":app:domain"))
+    implementation(project(":app:data"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
