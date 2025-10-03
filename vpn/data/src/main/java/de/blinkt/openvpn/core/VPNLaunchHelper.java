@@ -5,6 +5,7 @@
 
 package de.blinkt.openvpn.core;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -20,15 +21,22 @@ import de.blinkt.openvpn.R;
 import de.blinkt.openvpn.VpnProfile;
 
 public class VPNLaunchHelper {
+    private static final String MININONPIEVPN = "nopie_openvpn";
     private static final String MINIPIEVPN = "pie_openvpn";
+    private static final String OVPNCONFIGFILE = "android.conf";
+
 
     private static String writeMiniVPN(Context context) {
         String nativeAPI = NativeUtils.getNativeAPI();
         /* Q does not allow executing binaries written in temp directory anymore */
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
             return new File(context.getApplicationInfo().nativeLibraryDir, "libovpnexec.so").getPath();
-
-        String[] abis = Build.SUPPORTED_ABIS;
+        String[] abis;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            abis = getSupportedABIsLollipop();
+        else
+            //noinspection deprecation
+            abis = new String[]{Build.CPU_ABI, Build.CPU_ABI2};
 
         if (!nativeAPI.equals(abis[0])) {
             VpnStatus.logWarning(R.string.abi_mismatch, Arrays.toString(abis), nativeAPI);
@@ -37,13 +45,31 @@ public class VPNLaunchHelper {
 
         for (String abi : abis) {
 
-            File vpnExecutable = new File(context.getCacheDir(), "c_" + MINIPIEVPN + "." + abi);
+            File vpnExecutable = new File(context.getCacheDir(), "c_" + getMiniVPNExecutableName() + "." + abi);
             if ((vpnExecutable.exists() && vpnExecutable.canExecute()) || writeMiniVPNBinary(context, abi, vpnExecutable)) {
                 return vpnExecutable.getPath();
             }
         }
 
-        throw new RuntimeException("Cannot find any executable for this device's ABIs " + Arrays.toString(abis));
+        throw new RuntimeException("Cannot find any execulte for this device's ABIs " + abis.toString());
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private static String[] getSupportedABIsLollipop() {
+        return Build.SUPPORTED_ABIS;
+    }
+
+    private static String getMiniVPNExecutableName() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+            return MINIPIEVPN;
+        else
+            return MININONPIEVPN;
+    }
+
+
+    public static String[] replacePieWithNoPie(String[] mArgv) {
+        mArgv[0] = mArgv[0].replace(MINIPIEVPN, MININONPIEVPN);
+        return mArgv;
     }
 
 
@@ -53,13 +79,17 @@ public class VPNLaunchHelper {
         String binaryName = writeMiniVPN(c);
         // Add fixed paramenters
         //args.add("/data/data/de.blinkt.openvpn/lib/openvpn");
+        if (binaryName == null) {
+            VpnStatus.logError("Error writing minivpn binary");
+            return null;
+        }
 
         args.add(binaryName);
 
         args.add("--config");
-        args.add("stdin");
+        args.add(getConfigFilePath(c));
 
-        return args.toArray(new String[0]);
+        return args.toArray(new String[args.size()]);
     }
 
     private static boolean writeMiniVPNBinary(Context context, String abi, File mvpnout) {
@@ -67,16 +97,16 @@ public class VPNLaunchHelper {
             InputStream mvpn;
 
             try {
-                mvpn = context.getAssets().open(MINIPIEVPN + "." + abi);
+                mvpn = context.getAssets().open(getMiniVPNExecutableName() + "." + abi);
             } catch (IOException errabi) {
-                VpnStatus.logInfo("Failed getting assets for architecture " + abi);
+                VpnStatus.logInfo("Failed getting assets for archicture " + abi);
                 return false;
             }
 
 
             FileOutputStream fout = new FileOutputStream(mvpnout);
 
-            byte[] buf = new byte[4096];
+            byte buf[] = new byte[4096];
 
             int lenread = mvpn.read(buf);
             while (lenread > 0) {
@@ -100,8 +130,8 @@ public class VPNLaunchHelper {
     }
 
 
-    public static void startOpenVpn(VpnProfile startprofile, Context context, String startReason, boolean replace_running_vpn) {
-        Intent startVPN = startprofile.getStartServiceIntent(context, startReason, replace_running_vpn);
+    public static void startOpenVpn(VpnProfile startprofile, Context context) {
+        Intent startVPN = startprofile.prepareStartService(context);
         if (startVPN != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 //noinspection NewApi
@@ -111,4 +141,10 @@ public class VPNLaunchHelper {
 
         }
     }
+
+
+    public static String getConfigFilePath(Context context) {
+        return context.getCacheDir().getAbsolutePath() + "/" + OVPNCONFIGFILE;
+    }
+
 }

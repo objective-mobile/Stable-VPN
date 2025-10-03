@@ -127,14 +127,14 @@ class LogFileHandler extends Handler {
     }
 
     private void readLogCache(File cacheDir) {
-        FileInputStream log = null;
         try {
             File logfile = new File(cacheDir, LOGFILE_NAME);
+
 
             if (!logfile.exists() || !logfile.canRead())
                 return;
 
-            log = new FileInputStream(logfile);
+            FileInputStream log = new FileInputStream(logfile);
             readCacheContents(log);
             log.close();
 
@@ -147,13 +147,6 @@ class LogFileHandler extends Handler {
             synchronized (VpnStatus.readFileLock) {
                 VpnStatus.readFileLog = true;
                 VpnStatus.readFileLock.notifyAll();
-            }
-            if (log != null) {
-                try {
-                    log.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }

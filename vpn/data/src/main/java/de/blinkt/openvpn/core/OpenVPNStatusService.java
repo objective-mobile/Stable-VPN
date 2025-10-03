@@ -5,8 +5,10 @@
 
 package de.blinkt.openvpn.core;
 
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -21,10 +23,10 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 /**
- * Ensure to forward message from the backend process :openvpn to the frontend process via AIDL
+ * Created by arne on 08.11.16.
  */
 
-public class OpenVPNStatusService extends Service implements VpnStatus.LogListener, VpnStatus.ByteCountListener, VpnStatus.StateListener, VpnStatus.ProfileNotifyListener {
+public class OpenVPNStatusService extends Service implements VpnStatus.LogListener, VpnStatus.ByteCountListener, VpnStatus.StateListener {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -41,8 +43,8 @@ public class OpenVPNStatusService extends Service implements VpnStatus.LogListen
         VpnStatus.addLogListener(this);
         VpnStatus.addByteCountListener(this);
         VpnStatus.addStateListener(this);
-        VpnStatus.addProfileStateListener(this);
         mHandler.setService(this);
+
     }
 
     @Override
@@ -52,12 +54,11 @@ public class OpenVPNStatusService extends Service implements VpnStatus.LogListen
         VpnStatus.removeLogListener(this);
         VpnStatus.removeByteCountListener(this);
         VpnStatus.removeStateListener(this);
-        VpnStatus.removeProfileStateListener(this);
         mCallbacks.kill();
 
     }
 
-    private final IServiceStatus.Stub mBinder = new IServiceStatus.Stub() {
+    private static final IServiceStatus.Stub mBinder = new IServiceStatus.Stub() {
 
         @Override
         public ParcelFileDescriptor registerStatusCallback(IStatusCallbacks cb) throws RemoteException {
@@ -100,7 +101,10 @@ public class OpenVPNStatusService extends Service implements VpnStatus.LogListen
                 return pipe[0];
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new RemoteException(e.getMessage());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                    throw new RemoteException(e.getMessage());
+                }
+                return null;
             }
         }
 
@@ -126,7 +130,7 @@ public class OpenVPNStatusService extends Service implements VpnStatus.LogListen
 
         @Override
         public void notifyProfileVersionChanged(String uuid, int version) throws RemoteException {
-            ProfileManager.notifyProfileVersionChanged(OpenVPNStatusService.this, uuid, version);
+
         }
 
     };
@@ -176,20 +180,12 @@ public class OpenVPNStatusService extends Service implements VpnStatus.LogListen
         msg.sendToTarget();
     }
 
-    @Override
-    public void notifyProfileVersionChanged(String uuid, int version, boolean changedInThisProcess)
-    {
-        Message msg = mHandler.obtainMessage(SEND_NEW_PROFILE_VERSION, Pair.create(uuid, version));
-        msg.sendToTarget();
-    }
-
     private static final OpenVPNStatusHandler mHandler = new OpenVPNStatusHandler();
 
     private static final int SEND_NEW_LOGITEM = 100;
     private static final int SEND_NEW_STATE = 101;
     private static final int SEND_NEW_BYTECOUNT = 102;
     private static final int SEND_NEW_CONNECTED_VPN = 103;
-    private static final int SEND_NEW_PROFILE_VERSION = 104;
 
     private static class OpenVPNStatusHandler extends Handler {
         WeakReference<OpenVPNStatusService> service = null;
@@ -208,6 +204,7 @@ public class OpenVPNStatusService extends Service implements VpnStatus.LogListen
             // Broadcast to all clients the new value.
             final int N = callbacks.beginBroadcast();
             for (int i = 0; i < N; i++) {
+
                 try {
                     IStatusCallbacks broadcastItem = callbacks.getBroadcastItem(i);
 
@@ -226,10 +223,6 @@ public class OpenVPNStatusService extends Service implements VpnStatus.LogListen
                         case SEND_NEW_CONNECTED_VPN:
                             broadcastItem.connectedVPN((String) msg.obj);
                             break;
-
-                        case SEND_NEW_PROFILE_VERSION:
-                            Pair<String, Integer> profileupdate =  (Pair<String, Integer>) msg.obj;
-                            broadcastItem.notifyProfileVersionChanged(profileupdate.first, profileupdate.second);
                     }
                 } catch (RemoteException e) {
                     // The RemoteCallbackList will take care of removing

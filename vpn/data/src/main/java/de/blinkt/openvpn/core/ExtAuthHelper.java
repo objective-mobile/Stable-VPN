@@ -42,6 +42,7 @@ public class ExtAuthHelper {
 
     public static void setExternalAuthProviderSpinnerList(Spinner spinner, String selectedApp) {
         Context c = spinner.getContext();
+        final PackageManager pm = c.getPackageManager();
         ArrayList<ExternalAuthProvider> extProviders = getExternalAuthProviderList(c);
 
         int selectedPos = -1;
@@ -107,23 +108,15 @@ public class ExtAuthHelper {
     public static byte[] signData(@NonNull Context context,
                                   @NonNull String extAuthPackageName,
                                   @NonNull String alias,
-                                  @NonNull byte[] data,
-                                  @NonNull Bundle extra
+                                  @NonNull byte[] data
     ) throws KeyChainException, InterruptedException
 
     {
 
 
-        try (ExternalAuthProviderConnection authProviderConnection =
-                     bindToExtAuthProvider(context.getApplicationContext(), extAuthPackageName)) {
+        try (ExternalAuthProviderConnection authProviderConnection = bindToExtAuthProvider(context.getApplicationContext(), extAuthPackageName)) {
             ExternalCertificateProvider externalAuthProvider = authProviderConnection.getService();
-
-            byte[] result = externalAuthProvider.getSignedDataWithExtra(alias, data, extra);
-            // When the desired method is not implemented, a default implementation is called, returning null
-            if (result == null)
-                result = externalAuthProvider.getSignedData(alias, data);
-
-            return result;
+            return externalAuthProvider.getSignedData(alias, data);
 
         } catch (RemoteException e) {
             throw new KeyChainException(e);
@@ -215,9 +208,8 @@ public class ExtAuthHelper {
         Intent intent = new Intent(ACTION_CERT_PROVIDER);
         intent.setPackage(packagename);
 
-        if (!context.bindService(intent, extAuthServiceConnection,
-                Context.BIND_AUTO_CREATE | Context.BIND_ALLOW_ACTIVITY_STARTS)) {
-            throw new KeyChainException("could not bind to external authenticator app: " + packagename);
+        if (!context.bindService(intent, extAuthServiceConnection, Context.BIND_AUTO_CREATE)) {
+            throw new KeyChainException("could not bind to external authticator app: " + packagename);
         }
         return new ExternalAuthProviderConnection(context, extAuthServiceConnection, q.take());
     }
