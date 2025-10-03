@@ -1,5 +1,6 @@
 package com.objective.vpn.data
 
+import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -15,6 +16,7 @@ import de.blinkt.openvpn.core.OpenVPNService.LocalBinder
 import de.blinkt.openvpn.core.ProfileManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withTimeout
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -60,6 +62,23 @@ class VpnConnectionImpl(
         }
     }
 
-    override fun vpnStatus(): Flow<VpnStatus> =
-        vpnConnectionStorage.getVpnStatus().map { it.toVpnStatus() }
+    override fun vpnStatus(): Flow<VpnStatus> {
+        return vpnConnectionStorage.getVpnStatus().map {
+            it.toVpnStatus()
+        }.onStart {
+            if (!isServiceRunning(context, OpenVPNService::class.java)) {
+                vpnConnectionStorage.saveVpnStatus(VpnStatusData(VpnStatus.Disconnected))
+            }
+        }
+    }
+
+    fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
 }
