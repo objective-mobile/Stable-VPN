@@ -1,8 +1,6 @@
 package com.objective.vpn.data
 
 import android.content.Context
-import android.net.VpnService
-import androidx.core.app.ActivityCompat.startActivityForResult
 import com.objmobile.vpn.domain.VpnConnection
 import com.objmobile.vpn.domain.VpnProfile
 import com.objmobile.vpn.domain.VpnStatus

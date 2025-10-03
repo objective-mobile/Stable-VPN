@@ -39,7 +39,7 @@ public class OpenVpnApi {
             vp.mUsername = userName;
             vp.mPassword = pw;
             ProfileManager.setTemporaryProfile(context, vp);
-            VPNLaunchHelper.startOpenVpn(vp, context);
+            VPNLaunchHelper.startOpenVpn(vp, context, null, true);
         } catch (IOException | ConfigParser.ConfigParseError e) {
             throw new RemoteException(e.getMessage());
         }

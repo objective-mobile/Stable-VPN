@@ -11,6 +11,26 @@ composeBom = "2025.09.01"
 appcompat = "1.7.1"
 material = "1.10.0"
 
+android-gradle-plugin = "8.9.3"
+androidx-activity = "1.10.1"
+androidx-annotation = "1.9.1"
+androidx-appcompat = "1.7.1"
+android-view-material = "1.12.0"
+androidx-core-ktx = "1.16.0"
+androidx-fragment-ktx = "1.8.8"
+androidx-preference-ktx = "1.2.1"
+androidx-webkit = "1.14.0"
+androidx-lifecycle-viewmodel-ktx = "2.9.2"
+androidx-lifecycle-runtime-ktx = "2.9.2"
+androidx-security-crypto = "1.1.0-beta01"
+androidx-constraintlayout = "2.2.1"
+androidx-cardview = "1.0.0"
+androidx-recyclerview = "1.4.0"
+androidx-viewpager2 = "1.1.0"
+bouncycastle = "1.69"
+mpandroidchart = "v3.1.0"
+square-okhttp = "4.10.0"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -28,6 +48,27 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+android-view-material = { group = "com.google.android.material", name = "material", version.ref = "android-view-material" }
+androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "androidx-annotation" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "androidx-activity"}
+androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "androidx-activity"}
+androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "androidx-cardview" }
+androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref= "androidx-viewpager2" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "androidx-fragment-ktx" }
+androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "androidx-preference-ktx" }
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidx-webkit" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "androidx-lifecycle-viewmodel-ktx" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "androidx-recyclerview" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "androidx-security-crypto" }
+mpandroidchart = { group = "com.github.PhilJay", name = "MPAndroidChart", version.ref = "mpandroidchart" }
+org-bouncycastle-bcprov-jdk15on = { group = "org.bouncycastle", name = "bcprov-jdk15on", version.ref = "bouncycastle" }
+org-bouncycastle-bcprov-ext-jdk15on = { group = "org.bouncycastle", name = "bcprov-ext-jdk15on", version.ref = "bouncycastle" }
+org-bouncycastle-bcpkix-jdk15on = { group = "org.bouncycastle", name = "bcpkix-jdk15on", version.ref = "bouncycastle" }
+org-bouncycastle-bcmail-jdk15on = { group = "org.bouncycastle", name = "bcmail-jdk15on", version.ref = "bouncycastle" }
+org-bouncycastle-bcpg-jdk15on = { group = "org.bouncycastle", name = "bcpg-jdk15on", version.ref = "bouncycastle" }
+kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
+square-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "square-okhttp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
