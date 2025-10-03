@@ -20,6 +20,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.VpnService;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -218,6 +219,16 @@ public class ExternalOpenVPNService extends Service implements StateListener {
                 VpnStatus.logException(e);
                 return null;
             }
+        }
+
+        @Override
+        public void startVPNwithExtras(String inlineconfig, Bundle extras) throws RemoteException {
+
+        }
+
+        @Override
+        public APIVpnProfile addNewVPNProfileWithExtras(String name, boolean userEditable, String config, Bundle extras) throws RemoteException {
+            return null;
         }
 
         @Override

@@ -128,6 +128,11 @@ public class OpenVPNStatusService extends Service implements VpnStatus.LogListen
             return VpnStatus.trafficHistory;
         }
 
+        @Override
+        public void notifyProfileVersionChanged(String uuid, int version) throws RemoteException {
+
+        }
+
     };
 
     @Override

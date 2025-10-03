@@ -49,6 +49,11 @@ public class StatusListener implements VpnStatus.LogListener {
         public void connectedVPN(String uuid) throws RemoteException {
             VpnStatus.setConnectedVPNProfile(uuid);
         }
+
+        @Override
+        public void notifyProfileVersionChanged(String uuid, int profileVersion) throws RemoteException {
+
+        }
     };
     private ServiceConnection mConnection = new ServiceConnection() {
 
