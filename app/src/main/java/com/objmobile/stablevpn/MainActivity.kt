@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             StableVPNTheme {
-                VpnScreen(viewModel, this)
+                VpnScreen(viewModel)
             }
         }
     }

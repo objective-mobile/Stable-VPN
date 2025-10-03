@@ -1,7 +1,6 @@
 package com.objmobile.data
 
 import android.content.Context
-import android.net.VpnService
 import com.objmobile.domain.StableVpnStatus
 import com.objmobile.domain.VpnRepository
 import com.objmobile.vpn.OpenVpnConnection
@@ -25,6 +24,10 @@ class BaseVpnRepository(
                 appName, country, opvConfig
             )
         )
+    }
+
+    override suspend fun disconnectVpn() {
+        vpnConnection.disconnectVpn()
     }
 
     override val stableVpnStatus: Flow<StableVpnStatus>
