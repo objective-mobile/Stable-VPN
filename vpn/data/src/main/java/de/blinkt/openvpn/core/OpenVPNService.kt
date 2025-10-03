@@ -38,7 +38,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.gson.Gson
 import com.objective.vpn.data.VpnConnectionStorage
 import com.objective.vpn.data.VpnStatusData
 import de.blinkt.openvpn.DisconnectVPNActivity
@@ -142,7 +141,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             try {
                 if (mNotificationActivityClass != null) { // Let the configure Button show the Log
                     val intent = Intent(
-                        getBaseContext(), mNotificationActivityClass
+                        baseContext, mNotificationActivityClass
                     )
                     val typeStart = Objects.requireNonNull<Any?>(
                         mNotificationActivityClass!!.getField("TYPE_START").get(null)
@@ -193,7 +192,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
     }
 
     override fun onBind(intent: Intent): IBinder? {
-        val action = intent.getAction()
+        val action = intent.action
         if (action != null && action == START_SERVICE) return mBinder
         else return super.onBind(intent)
     }
@@ -235,8 +234,8 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
                 getString(R.string.channel_name_background),
                 NotificationManager.IMPORTANCE_NONE
             )
-            chan.setLightColor(Color.BLUE)
-            chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE)
+            chan.lightColor = Color.BLUE
+            chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
             val service = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             service.createNotificationChannel(chan)
 
@@ -305,7 +304,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             nBuilder.setChannelId(channel)
-            if (mProfile != null) nBuilder.setShortcutId(mProfile!!.getUUIDString())
+            if (mProfile != null) nBuilder.setShortcutId(mProfile!!.uuidString)
         }
 
         if (tickerText != null && tickerText != "") nBuilder.setTicker(tickerText)
@@ -335,7 +334,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             override fun run() {
                 if (mlastToast != null) mlastToast!!.cancel()
                 val toastText = String.format(Locale.getDefault(), "%s - %s", mProfile!!.mName, msg)
-                mlastToast = Toast.makeText(getBaseContext(), toastText, Toast.LENGTH_SHORT)
+                mlastToast = Toast.makeText(baseContext, toastText, Toast.LENGTH_SHORT)
                 mlastToast!!.show()
             }
         })
@@ -361,7 +360,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
 
     private fun runningOnAndroidTV(): Boolean {
         val uiModeManager = getSystemService(UI_MODE_SERVICE) as UiModeManager
-        return uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION
+        return uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -402,7 +401,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             disconnectPendingIntent
         )
         val pauseVPN = Intent(this, OpenVPNService::class.java)
-        if (mDeviceStateReceiver == null || !mDeviceStateReceiver!!.isUserPaused()) {
+        if (mDeviceStateReceiver == null || !mDeviceStateReceiver!!.isUserPaused) {
             pauseVPN.setAction(PAUSE_VPN)
             val pauseVPNPending =
                 PendingIntent.getService(this, 0, pauseVPN, PendingIntent.FLAG_IMMUTABLE)
@@ -420,7 +419,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
     }
 
     fun getUserInputIntent(needed: String?): PendingIntent? {
-        val intent = Intent(getApplicationContext(), LaunchVPN::class.java)
+        val intent = Intent(applicationContext, LaunchVPN::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         intent.putExtra("need", needed)
         val b = Bundle()
@@ -432,7 +431,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
     val graphPendingIntent: PendingIntent?
         get() { // Let the configure Button show the Log
             val intent = Intent()
-            intent.setComponent(ComponentName(this, getPackageName() + ".view.MainActivity"))
+            intent.setComponent(ComponentName(this, packageName + ".view.MainActivity"))
 
             intent.putExtra("PAGE", "graph")
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -487,9 +486,9 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         VpnStatus.addStateListener(this)
         VpnStatus.addByteCountListener(this)
 
-        guiHandler = Handler(getMainLooper())
+        guiHandler = Handler(mainLooper)
 
-        if (intent != null && DISCONNECT_VPN == intent.getAction()) {
+        if (intent != null && DISCONNECT_VPN == intent.action) {
             try {
                 stopVPN(false)
             } catch (e: RemoteException) {
@@ -498,19 +497,19 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             return START_NOT_STICKY
         }
 
-        if (intent != null && PAUSE_VPN == intent.getAction()) {
+        if (intent != null && PAUSE_VPN == intent.action) {
             if (mDeviceStateReceiver != null) mDeviceStateReceiver!!.userPause(true)
             return START_NOT_STICKY
         }
 
-        if (intent != null && RESUME_VPN == intent.getAction()) {
+        if (intent != null && RESUME_VPN == intent.action) {
             if (mDeviceStateReceiver != null) mDeviceStateReceiver!!.userPause(false)
             return START_NOT_STICKY
         }
 
 
-        if (intent != null && START_SERVICE == intent.getAction()) return START_NOT_STICKY
-        if (intent != null && START_SERVICE_STICKY == intent.getAction()) {
+        if (intent != null && START_SERVICE == intent.action) return START_NOT_STICKY
+        if (intent != null && START_SERVICE_STICKY == intent.action) {
             return START_REDELIVER_INTENT
         } // Always show notification here to avoid problem with startForeground timeout
         VpnStatus.logInfo(R.string.building_configration)
@@ -526,10 +525,10 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             null
         )
 
-        if (intent != null && intent.hasExtra(getPackageName() + ".profileUUID")) {
-            val profileUUID = intent.getStringExtra(getPackageName() + ".profileUUID")
+        if (intent != null && intent.hasExtra(packageName + ".profileUUID")) {
+            val profileUUID = intent.getStringExtra(packageName + ".profileUUID")
             val profileVersion = intent.getIntExtra(
-                getPackageName() + ".profileVersion", 0
+                packageName + ".profileVersion", 0
             ) // Try for 10s to get current version of the profile
             mProfile = ProfileManager.get(this, profileUUID, profileVersion, 100)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
@@ -564,16 +563,15 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
 
 
         ProfileManager.setConnectedVpnProfile(this, mProfile)
-        VpnStatus.setConnectedVPNProfile(mProfile!!.getUUIDString())
-
-        return START_STICKY
+        VpnStatus.setConnectedVPNProfile(mProfile!!.uuidString)
+        return START_NOT_STICKY
     }
 
     @RequiresApi(Build.VERSION_CODES.N_MR1)
     private fun updateShortCutUsage(profile: VpnProfile?) {
         if (profile == null) return
         val shortcutManager = getSystemService<ShortcutManager>(ShortcutManager::class.java)
-        shortcutManager.reportShortcutUsed(profile.getUUIDString())
+        shortcutManager.reportShortcutUsed(profile.uuidString)
     }
 
     private fun startOpenVPN() {
@@ -584,10 +582,10 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             endVpnService()
             return
         }
-        val nativeLibraryDirectory = getApplicationInfo().nativeLibraryDir
+        val nativeLibraryDirectory = applicationInfo.nativeLibraryDir
         var tmpDir: String?
         try {
-            tmpDir = getApplication().getCacheDir().getCanonicalPath()
+            tmpDir = application.cacheDir.getCanonicalPath()
         } catch (e: IOException) {
             e.printStackTrace()
             tmpDir = "/tmp"
@@ -625,7 +623,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             mProcessThread!!.start()
         }
 
-        Handler(getMainLooper()).post(object : Runnable {
+        Handler(mainLooper).post(object : Runnable {
             override fun run() {
                 if (mDeviceStateReceiver != null) unregisterDeviceStateReceiver()
 
@@ -683,10 +681,6 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
 
     override fun asBinder(): IBinder {
         return mBinder
-    }
-
-    override fun onCreate() {
-        super.onCreate()
     }
 
     override fun onDestroy() {
@@ -747,7 +741,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             try {
                 builder.addAddress(mLocalIP!!.mIp, mLocalIP!!.len)
             } catch (iae: IllegalArgumentException) {
-                VpnStatus.logError(R.string.dns_add_error, mLocalIP, iae.getLocalizedMessage())
+                VpnStatus.logError(R.string.dns_add_error, mLocalIP, iae.localizedMessage)
                 return null
             }
         }
@@ -758,7 +752,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             try {
                 builder.addAddress(ipv6parts[0], ipv6parts[1].toInt())
             } catch (iae: IllegalArgumentException) {
-                VpnStatus.logError(R.string.ip_add_error, mLocalIPv6, iae.getLocalizedMessage())
+                VpnStatus.logError(R.string.ip_add_error, mLocalIPv6, iae.localizedMessage)
                 return null
             }
         }
@@ -768,7 +762,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             try {
                 builder.addDnsServer(dns)
             } catch (iae: IllegalArgumentException) {
-                VpnStatus.logError(R.string.dns_add_error, dns, iae.getLocalizedMessage())
+                VpnStatus.logError(R.string.dns_add_error, dns, iae.localizedMessage)
             }
         }
         val release = Build.VERSION.RELEASE
@@ -822,7 +816,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
                 )
                 else builder.addRoute(route.getIPv4Address(), route.networkMask)
             } catch (ia: IllegalArgumentException) {
-                VpnStatus.logError(getString(R.string.route_rejected) + route + " " + ia.getLocalizedMessage())
+                VpnStatus.logError(getString(R.string.route_rejected) + route + " " + ia.localizedMessage)
             }
         }
 
@@ -830,7 +824,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             try {
                 builder.addRoute(route6.getIPv6Address(), route6.networkMask)
             } catch (ia: IllegalArgumentException) {
-                VpnStatus.logError(getString(R.string.route_rejected) + route6 + " " + ia.getLocalizedMessage())
+                VpnStatus.logError(getString(R.string.route_rejected) + route6 + " " + ia.localizedMessage)
             }
         }
 
@@ -912,7 +906,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             return tun
         } catch (e: Exception) {
             VpnStatus.logError(R.string.tun_open_error)
-            VpnStatus.logError(getString(R.string.error) + e.getLocalizedMessage())
+            VpnStatus.logError(getString(R.string.error) + e.localizedMessage)
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 VpnStatus.logError(R.string.tun_error_helpful)
             }
@@ -923,7 +917,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
     private val isLockdownEnabledCompat: Boolean
         get() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                return isLockdownEnabled()
+                return isLockdownEnabled
             } else {/* We cannot determine this, return false */
                 return false
             }
@@ -991,11 +985,11 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         }
 
         if (!mProfile!!.mAllowedAppsVpnAreDisallowed && !atLeastOneAllowedApp) {
-            VpnStatus.logDebug(R.string.no_allowed_app, getPackageName())
+            VpnStatus.logDebug(R.string.no_allowed_app, packageName)
             try {
-                builder.addAllowedApplication(getPackageName())
+                builder.addAllowedApplication(packageName)
             } catch (e: PackageManager.NameNotFoundException) {
-                VpnStatus.logError("This should not happen: " + e.getLocalizedMessage())
+                VpnStatus.logError("This should not happen: " + e.localizedMessage)
             }
         }
 
@@ -1106,7 +1100,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
                 masklen = 31
                 mask = -0x2
             } // Netmask is Ip address +/-1, assume net30/p2p with small net
-            if ((netMaskAsInt and mask) == (mLocalIP!!.getInt() and mask)) {
+            if ((netMaskAsInt and mask) == (mLocalIP!!.int and mask)) {
                 mLocalIP!!.len = masklen
             } else {
                 mLocalIP!!.len = 32
@@ -1147,7 +1141,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             // This also mean we are no longer connected, ignore bytecount messages until next
             // CONNECTED
             // Does not work :(
-            val msg = getString(resid)
+            getString(resid)
             showNotification(
                 VpnStatus.getLastCleanLogMessage(this),
                 VpnStatus.getLastCleanLogMessage(this),
@@ -1193,13 +1187,13 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         if (mDisplayBytecount) {
             val netstat = String.format(
                 getString(R.string.statusline_bytecount),
-                humanReadableByteCount(`in`, false, getResources()),
+                humanReadableByteCount(`in`, false, resources),
                 humanReadableByteCount(
-                    diffIn / OpenVPNManagement.mBytecountInterval, true, getResources()
+                    diffIn / OpenVPNManagement.mBytecountInterval, true, resources
                 ),
-                humanReadableByteCount(out, false, getResources()),
+                humanReadableByteCount(out, false, resources),
                 humanReadableByteCount(
-                    diffOut / OpenVPNManagement.mBytecountInterval, true, getResources()
+                    diffOut / OpenVPNManagement.mBytecountInterval, true, resources
                 )
             )
 
@@ -1215,16 +1209,16 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             byteIn = String.format(
                 "↓%2\$s",
                 getString(R.string.statusline_bytecount),
-                humanReadableByteCount(`in`, false, getResources())
+                humanReadableByteCount(`in`, false, resources)
             ) + " - " + humanReadableByteCount(
-                diffIn / OpenVPNManagement.mBytecountInterval, false, getResources()
+                diffIn / OpenVPNManagement.mBytecountInterval, false, resources
             ) + "/s"
             byteOut = String.format(
                 "↑%2\$s",
                 getString(R.string.statusline_bytecount),
-                humanReadableByteCount(out, false, getResources())
+                humanReadableByteCount(out, false, resources)
             ) + " - " + humanReadableByteCount(
-                diffOut / OpenVPNManagement.mBytecountInterval, false, getResources()
+                diffOut / OpenVPNManagement.mBytecountInterval, false, resources
             ) + "/s"
             time = Calendar.getInstance().getTimeInMillis() - c
             lastPacketReceive =
@@ -1251,7 +1245,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
     }
 
     override fun handleMessage(msg: Message): Boolean {
-        val r = msg.getCallback()
+        val r = msg.callback
         if (r != null) {
             r.run()
             return true
@@ -1311,7 +1305,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             intent = Intent()
             intent.setComponent(
                 ComponentName(
-                    this, getPackageName() + ".activities.CredentialsPopup"
+                    this, packageName + ".activities.CredentialsPopup"
                 )
             )
 
@@ -1341,7 +1335,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             nbuilder.setChannelId(channel)
         }
-        @Suppress("deprecation") val notification = nbuilder.getNotification()
+        @Suppress("deprecation") val notification = nbuilder.notification
         val notificationId = channel.hashCode()
 
         mNotificationManager.notify(notificationId, notification)
@@ -1352,7 +1346,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         val intent = Intent("connectionState")
         intent.putExtra("state", state)
         status = state
-        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent)
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
     }
 
     //sending message to main activity
@@ -1364,7 +1358,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         intent.putExtra("lastPacketReceive", lastPacketReceive)
         intent.putExtra("byteIn", byteIn)
         intent.putExtra("byteOut", byteOut)
-        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent)
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
     }
 
     inner class LocalBinder : Binder() {
