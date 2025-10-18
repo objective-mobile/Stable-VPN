@@ -10,6 +10,7 @@ android {
         aidl = true
         buildConfig = true
     }
+    //TODO Change to com.objmobile
     namespace = "de.blinkt.openvpn"
     compileSdk = 36
     //compileSdkPreview = "UpsideDownCake"
@@ -74,6 +75,8 @@ if (file("/opt/homebrew/bin/swig").exists())
     swigcmd = "/opt/homebrew/bin/swig"
 else if (file("/usr/local/bin/swig").exists())
     swigcmd = "/usr/local/bin/swig"
+if (file("C:\\swig\\swig.exe").exists())
+    swigcmd = "C:\\swig\\swig.exe"
 
 
 fun registerGenTask(variantName: String, variantDirName: String): File {
