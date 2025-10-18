@@ -17,7 +17,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "Stable VPN"
 include(":app")
-include(":data")
 include(":app:data")
 include(":app:domain")
 include(":app:presentation")
