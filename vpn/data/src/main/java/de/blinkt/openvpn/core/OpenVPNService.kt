@@ -40,6 +40,7 @@ import androidx.annotation.RequiresApi
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.objective.vpn.data.VpnConnectionStorage
 import com.objective.vpn.data.VpnStatusData
+import com.objmobile.vpn.data.mapper.ConnectionStatusMapper
 import de.blinkt.openvpn.DisconnectVPNActivity
 import de.blinkt.openvpn.LaunchVPN
 import de.blinkt.openvpn.R
@@ -162,7 +163,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
                 }
             } catch (e: Exception) {
                 Log.e(
-                    this.javaClass.getCanonicalName(), "Build detail intent error", e
+                    this.javaClass.canonicalName, "Build detail intent error", e
                 )
                 e.printStackTrace()
             }
@@ -328,7 +329,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
                 mNotificationManager.cancel(lastChannel.hashCode())
             }
         } catch (th: Throwable) {
-            Log.e(javaClass.getCanonicalName(), "Error when show notification", th)
+            Log.e(javaClass.canonicalName, "Error when show notification", th)
         } // Check if running on a TV
         if (runningOnAndroidTV() && priority >= 0) guiHandler!!.post(object : Runnable {
             override fun run() {
@@ -391,7 +392,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     private fun addVpnActionsToNotification(nbuilder: Notification.Builder) {
         val disconnectVPN = Intent(this, DisconnectVPNActivity::class.java)
-        disconnectVPN.setAction(DISCONNECT_VPN)
+        disconnectVPN.action = DISCONNECT_VPN
         val disconnectPendingIntent =
             PendingIntent.getActivity(this, 0, disconnectVPN, PendingIntent.FLAG_IMMUTABLE)
 
@@ -402,14 +403,14 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         )
         val pauseVPN = Intent(this, OpenVPNService::class.java)
         if (mDeviceStateReceiver == null || !mDeviceStateReceiver!!.isUserPaused) {
-            pauseVPN.setAction(PAUSE_VPN)
+            pauseVPN.action = PAUSE_VPN
             val pauseVPNPending =
                 PendingIntent.getService(this, 0, pauseVPN, PendingIntent.FLAG_IMMUTABLE)
             nbuilder.addAction(
                 R.drawable.ic_menu_pause, getString(R.string.pauseVPN), pauseVPNPending
             )
         } else {
-            pauseVPN.setAction(RESUME_VPN)
+            pauseVPN.action = RESUME_VPN
             val resumeVPNPending =
                 PendingIntent.getService(this, 0, pauseVPN, PendingIntent.FLAG_IMMUTABLE)
             nbuilder.addAction(
@@ -431,7 +432,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
     val graphPendingIntent: PendingIntent?
         get() { // Let the configure Button show the Log
             val intent = Intent()
-            intent.setComponent(ComponentName(this, packageName + ".view.MainActivity"))
+            intent.component = ComponentName(this, packageName + ".view.MainActivity")
 
             intent.putExtra("PAGE", "graph")
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -585,7 +586,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         val nativeLibraryDirectory = applicationInfo.nativeLibraryDir
         var tmpDir: String?
         try {
-            tmpDir = application.cacheDir.getCanonicalPath()
+            tmpDir = application.cacheDir.canonicalPath
         } catch (e: IOException) {
             e.printStackTrace()
             tmpDir = "/tmp"
@@ -1158,25 +1159,20 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
 
     private fun doSendBroadcast(state: String?, level: ConnectionStatus) {
         val vpnstatus = Intent()
-        vpnstatus.setAction("de.blinkt.openvpn.VPN_STATUS")
+        vpnstatus.action = "de.blinkt.openvpn.VPN_STATUS"
         vpnstatus.putExtra("status", level.toString())
         vpnstatus.putExtra("detailstatus", state)
         sendBroadcast(vpnstatus, permission.ACCESS_NETWORK_STATE)
         Log.d("OpenVPNService", "doSendBroadcast: state $state $level")
         scope.launch {
             vpnConnectionStorage.saveVpnStatus(
-                VpnStatusData(
-                    com.objmobile.vpn.domain.VpnStatus.Connected(
-                        state ?: "",
-                        ""
-                    )
-                )
+                VpnStatusData(ConnectionStatusMapper.mapToDomain(level, state ?: "", "", ""))
             )
         }
         sendMessage(state)
     }
 
-    var c: Long = Calendar.getInstance().getTimeInMillis()
+    var c: Long = Calendar.getInstance().timeInMillis
     var time: Long = 0
     var lastPacketReceive: Int = 0
     var seconds: String = "0"
@@ -1220,7 +1216,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             ) + " - " + humanReadableByteCount(
                 diffOut / OpenVPNManagement.mBytecountInterval, false, resources
             ) + "/s"
-            time = Calendar.getInstance().getTimeInMillis() - c
+            time = Calendar.getInstance().timeInMillis - c
             lastPacketReceive =
                 convertTwoDigit((time / 1000).toInt() % 60).toInt() - seconds.toInt()
             seconds = convertTwoDigit((time / 1000).toInt() % 60)
@@ -1303,10 +1299,8 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
             nbuilder.setContentText(challenge)
 
             intent = Intent()
-            intent.setComponent(
-                ComponentName(
-                    this, packageName + ".activities.CredentialsPopup"
-                )
+            intent.component = ComponentName(
+                this, packageName + ".activities.CredentialsPopup"
             )
 
             intent.putExtra(EXTRA_CHALLENGE_TXT, challenge)
