@@ -15,12 +15,12 @@ import android.os.Build;
 import android.preference.PreferenceManager;
 import android.security.KeyChain;
 import android.security.KeyChainException;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Base64;
 
-import de.blinkt.openvpn.core.*;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import org.spongycastle.util.io.pem.PemObject;
 import org.spongycastle.util.io.pem.PemWriter;
 
@@ -33,7 +33,11 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -48,13 +52,23 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import de.blinkt.openvpn.core.Connection;
+import de.blinkt.openvpn.core.ExtAuthHelper;
+import de.blinkt.openvpn.core.NativeUtils;
+import de.blinkt.openvpn.core.OpenVPNService;
+import de.blinkt.openvpn.core.OrbotHelper;
+import de.blinkt.openvpn.core.PasswordCache;
+import de.blinkt.openvpn.core.VPNLaunchHelper;
+import de.blinkt.openvpn.core.VpnStatus;
+import de.blinkt.openvpn.core.X509Utils;
+
 public class VpnProfile implements Serializable, Cloneable {
     // Note that this class cannot be moved to core where it belongs since
     // the profile loading depends on it being here
     // The Serializable documentation mentions that class name change are possible
     // but the how is unclear
     //
-    transient public static final long MAX_EMBED_FILE_SIZE = 2048 * 1024; // 2048kB
+    public static final long MAX_EMBED_FILE_SIZE = 2048 * 1024; // 2048kB
     // Don't change this, not all parts of the program use this constant
     public static final String EXTRA_PROFILEUUID = "de.blinkt.openvpn.profileUUID";
     public static final String INLINE_TAG = "[[INLINE]]";
@@ -89,6 +103,7 @@ public class VpnProfile implements Serializable, Cloneable {
     // profiles
     public transient boolean profileDeleted = false;
     public int mAuthenticationType = TYPE_KEYSTORE;
+    public String country;
     public String mName;
     public String mAlias;
     public String mClientCertFilename;
@@ -224,16 +239,12 @@ public class VpnProfile implements Serializable, Cloneable {
     public static boolean isEmbedded(String data) {
         if (data == null)
             return false;
-        if (data.startsWith(INLINE_TAG) || data.startsWith(DISPLAYNAME_TAG))
-            return true;
-        else
-            return false;
+        return data.startsWith(INLINE_TAG) || data.startsWith(DISPLAYNAME_TAG);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof VpnProfile) {
-            VpnProfile vpnProfile = (VpnProfile) obj;
+        if (obj instanceof VpnProfile vpnProfile) {
             return mUuid.equals(vpnProfile.mUuid);
         } else {
             return false;
@@ -844,7 +855,7 @@ public class VpnProfile implements Serializable, Cloneable {
         try {
             String keystoreChain = null;
 
-            X509Certificate caChain[];
+            X509Certificate[] caChain;
             if (mAuthenticationType == TYPE_EXTERNAL_APP) {
                 caChain = getExtAppCertificates(context);
             } else {
@@ -981,8 +992,10 @@ public class VpnProfile implements Serializable, Cloneable {
 
         boolean noRemoteEnabled = true;
         for (Connection c : mConnections) {
-            if (c.mEnabled)
+            if (c.mEnabled) {
                 noRemoteEnabled = false;
+                break;
+            }
 
         }
         if (noRemoteEnabled)
@@ -1079,10 +1092,7 @@ public class VpnProfile implements Serializable, Cloneable {
 
         if (data.contains("Proc-Type: 4,ENCRYPTED"))
             return true;
-        else if (data.contains("-----BEGIN ENCRYPTED PRIVATE KEY-----"))
-            return true;
-        else
-            return false;
+        else return data.contains("-----BEGIN ENCRYPTED PRIVATE KEY-----");
     }
 
     public int needUserPWInput(String transientCertOrPkcs12PW, String mTransientAuthPW) {
@@ -1245,7 +1255,3 @@ public class VpnProfile implements Serializable, Cloneable {
 
 
 }
-
-
-
-

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 class BaseVpnRepository(
     private val appName: String, private val vpnConnection: VpnConnection
 ) : VpnRepository {
+
     constructor(context: Context) : this(
         context.getString(R.string.app_name),
         OpenVpnConnection(context)
@@ -31,12 +32,16 @@ class BaseVpnRepository(
     }
 
     override val stableVpnStatus: Flow<StableVpnStatus>
-        get() = vpnConnection.vpnStatus().map {
-            when (it) {
-                is VpnStatus.Connected -> StableVpnStatus.Connected(it.country, it.ip)
+        get() = vpnConnection.vpnStatus().map { vpnStatus ->
+            when (vpnStatus) {
+                is VpnStatus.Connected -> {
+                    StableVpnStatus.Connected(
+                        vpnStatus.country, vpnStatus.ip
+                    )
+                }
                 VpnStatus.Connecting -> StableVpnStatus.Connecting
                 VpnStatus.Disconnected -> StableVpnStatus.Disconnected
-                is VpnStatus.Error -> StableVpnStatus.Error(it.message)
+                is VpnStatus.Error -> StableVpnStatus.Error(vpnStatus.message)
                 VpnStatus.Pause -> StableVpnStatus.Pause
             }
         }

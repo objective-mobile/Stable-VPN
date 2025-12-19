@@ -9,17 +9,20 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +50,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.objmobile.domain.StableVpnStatus
+import com.objmobile.presentation.mapper.CountryFlagMapper
 import com.objmobile.presentation.ui.theme.StableVPNTheme
 
 @Composable
@@ -85,30 +89,25 @@ fun StableVpnHomeScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        "StableVpn",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1D4ED8)
-                    )
-                }, //                navigationIcon = {
-                //                    IconButton(onClick = onLocationClick) {
-                //                        Icon(
-                //                            painter = painterResource(id = R.drawable.ic_place),
-                //                            contentDescription = "Location",
-                //                            tint = Color(0xFF64748B)
-                //                        )
-                //                    }
-                //                },
-                //                actions = {
-                //                    IconButton(onClick = onSettingsClick) {
-                //                        Icon(
-                //                            painter = painterResource(id = R.drawable.ic_settings),
-                //                            contentDescription = "Settings",
-                //                            tint = Color(0xFF64748B)
-                //                        )
-                //                    }
-                //                },
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) { // App icon in title bar
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_app_logo),
+                            contentDescription = "StableVpn App Icon",
+                            modifier = Modifier.size(24.dp),
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            "StableVpn",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF1D4ED8)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.Transparent
                 )
@@ -279,10 +278,30 @@ private fun StatusText(status: StableVpnStatus) {
     )
 
     if (!subtitle.isNullOrBlank()) {
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = subtitle, fontSize = 14.sp, color = Color(0xFF64748B)
-        )
+        Spacer(Modifier.height(6.dp)) // Show flag and country info for connected state
+        if (status is StableVpnStatus.Connected) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) { // Country flag icon
+                Icon(
+                    painter = painterResource(id = CountryFlagMapper.getFlagResource(status.country)),
+                    contentDescription = "Flag of ${status.country}",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.Unspecified // Don't tint flag icons to preserve colors
+                )
+
+                Spacer(modifier = Modifier.width(8.dp)) // Country name and IP
+                Text(
+                    text = "${status.country} • ${status.ip}",
+                    fontSize = 14.sp,
+                    color = Color(0xFF64748B)
+                )
+            }
+        } else { // Regular subtitle for other states
+            Text(
+                text = subtitle, fontSize = 14.sp, color = Color(0xFF64748B)
+            )
+        }
     }
 }
 

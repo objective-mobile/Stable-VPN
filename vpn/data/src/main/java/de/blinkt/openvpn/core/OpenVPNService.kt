@@ -1164,12 +1164,28 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
         vpnstatus.putExtra("detailstatus", state)
         sendBroadcast(vpnstatus, permission.ACCESS_NETWORK_STATE)
         Log.d("OpenVPNService", "doSendBroadcast: state $state $level")
+        Log.d("OpenVPNService", "doSendBroadcast: ${mProfile?.name}")
+        Log.d("OpenVPNService", "doSendBroadcast: ${mProfile?.mServerName}")
+        Log.d("OpenVPNService", "doSendBroadcast: ${mProfile?.country}")
+
         scope.launch {
             vpnConnectionStorage.saveVpnStatus(
-                VpnStatusData(ConnectionStatusMapper.mapToDomain(level, state ?: "", "", ""))
+                VpnStatusData(
+                    ConnectionStatusMapper.mapToDomain(
+                        level,
+                        mProfile?.country ?: "",
+                        extractIpFromString(mProfile?.mName ?: "") ?: "",
+                        ""
+                    )
+                )
             )
         }
         sendMessage(state)
+    }
+
+    fun extractIpFromString(input: String): String? {
+        val ipRegex = Regex("""\b(?:\d{1,3}\.){3}\d{1,3}\b""")
+        return ipRegex.find(input)?.value
     }
 
     var c: Long = Calendar.getInstance().timeInMillis
