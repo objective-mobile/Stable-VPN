@@ -272,7 +272,7 @@ class OpenVPNService : VpnService(), StateListener, Handler.Callback, ByteCountL
 
         if (mProfile != null) nBuilder.setContentTitle(
             getString(
-                R.string.notifcation_title, mProfile!!.mName
+                R.string.notifcation_title
             )
         )
         else nBuilder.setContentTitle(getString(R.string.notifcation_title_notconnect))
