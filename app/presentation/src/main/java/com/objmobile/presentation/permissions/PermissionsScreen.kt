@@ -219,7 +219,7 @@ private fun PermissionsScreenContent(
                                     shape = RoundedCornerShape(16.dp)
                                 ) {
                                     Text(
-                                        text = "Next",
+                                        text = "Grant",
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color.White
