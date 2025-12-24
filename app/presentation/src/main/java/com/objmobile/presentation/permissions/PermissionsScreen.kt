@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -32,6 +34,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.objmobile.domain.Permission
+import com.objmobile.domain.PermissionState
+import com.objmobile.domain.PermissionType
+import com.objmobile.domain.Permissions
 import com.objmobile.presentation.components.VpnTopAppBar
 import com.objmobile.presentation.ui.theme.StableVPNTheme
 
@@ -42,9 +48,10 @@ fun PermissionsScreen(
     onRequestPermission: () -> Unit
 ) {
     val permissionState by viewModel.permissionState.collectAsState()
+    val permissions by viewModel.permissions.collectAsState()
 
     PermissionsScreenContent(
-        permissionState = permissionState,
+        permissionState = permissionState, permissions = permissions,
         onNextClick = onRequestPermission,
         onPermissionGranted = onPermissionGranted
     )
@@ -52,7 +59,10 @@ fun PermissionsScreen(
 
 @Composable
 private fun PermissionsScreenContent(
-    permissionState: PermissionState, onNextClick: () -> Unit, onPermissionGranted: () -> Unit = {}
+    permissionState: PermissionState, permissions: Permissions = Permissions(
+        vpnPermission = Permission(PermissionType.VPN, false),
+        notificationPermission = Permission(PermissionType.NOTIFICATION, false)
+    ), onNextClick: () -> Unit, onPermissionGranted: () -> Unit = {}
 ) { // Handle permission granted state
     if (permissionState is PermissionState.Granted) {
         onPermissionGranted()
@@ -115,11 +125,26 @@ private fun PermissionsScreenContent(
 
                         Spacer(modifier = Modifier.height(32.dp)) // Description
                         Text(
-                            text = "To provide you with secure VPN protection, StableVPN needs permission to create and manage VPN connections on your device.\n\n" + "This permission allows the app to:\n" + "• Create secure VPN tunnels\n" + "• Route your internet traffic through encrypted connections\n" + "• Protect your privacy and data\n\n" + "Your data remains private and secure at all times.",
+                            text = "StableVPN requires the following permissions to provide secure VPN protection and keep you informed about your connection status:",
                             fontSize = 16.sp,
                             color = Color(0xFF64748B),
                             textAlign = TextAlign.Center,
                             lineHeight = 24.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp)) // Permission items
+                        PermissionItem(
+                            title = "VPN Connection",
+                            description = "Create and manage secure VPN tunnels",
+                            isGranted = permissions.vpnGranted()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        PermissionItem(
+                            title = "Notifications",
+                            description = "Show connection status and important alerts",
+                            isGranted = permissions.notificationGranted()
                         )
 
                         Spacer(modifier = Modifier.height(48.dp)) // Next Button or Loading State
@@ -155,7 +180,7 @@ private fun PermissionsScreenContent(
                             is PermissionState.Denied -> {
                                 Column {
                                     Text(
-                                        text = "Permission denied. Please grant VPN permission to continue.",
+                                        text = "Some permissions were denied. Please grant all required permissions to continue.",
                                         fontSize = 14.sp,
                                         color = Color(0xFFEF4444),
                                         textAlign = TextAlign.Center,
@@ -209,6 +234,46 @@ private fun PermissionsScreenContent(
     }
 }
 
+@Composable
+private fun PermissionItem(
+    title: String, description: String, isGranted: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
+    ) { // Status indicator
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .background(
+                    color = if (isGranted) Color(0xFF10B981) else Color(0xFFEF4444),
+                    shape = CircleShape
+                )
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1F2937)
+            )
+            Text(
+                text = description, fontSize = 14.sp, color = Color(0xFF64748B), lineHeight = 20.sp
+            )
+        } // Status text
+        Text(
+            text = if (isGranted) "Granted" else "Required",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (isGranted) Color(0xFF10B981) else Color(0xFFEF4444)
+        )
+    }
+}
+
 // --- Previews ---
 @Preview(showBackground = true, widthDp = 390, heightDp = 800)
 @Composable
@@ -226,7 +291,24 @@ private fun PermissionsScreenPreview_Checking() {
 private fun PermissionsScreenPreview_NotRequested() {
     StableVPNTheme {
         PermissionsScreenContent(
+            permissionState = PermissionState.NotRequested, permissions = Permissions(
+                vpnPermission = Permission(PermissionType.VPN, false),
+                notificationPermission = Permission(PermissionType.NOTIFICATION, false)
+            ),
+            onNextClick = {}, onPermissionGranted = {})
+    }
+}
+
+@Preview(showBackground = true, widthDp = 390, heightDp = 800)
+@Composable
+private fun PermissionsScreenPreview_PartiallyGranted() {
+    StableVPNTheme {
+        PermissionsScreenContent(
             permissionState = PermissionState.NotRequested,
+            permissions = Permissions(
+                vpnPermission = Permission(PermissionType.VPN, true),
+                notificationPermission = Permission(PermissionType.NOTIFICATION, false)
+            ),
             onNextClick = {},
             onPermissionGranted = {})
     }

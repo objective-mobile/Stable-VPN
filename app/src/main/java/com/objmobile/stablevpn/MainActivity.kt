@@ -1,8 +1,11 @@
 package com.objmobile.stablevpn
 
-import android.app.Activity
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.VpnService
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,14 +13,17 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.objmobile.data.BaseVpnRepository
+import com.objmobile.data.PermissionFactory
+import com.objmobile.domain.PermissionState
 import com.objmobile.presentation.main.VpnScreen
 import com.objmobile.presentation.main.VpnViewModel
-import com.objmobile.presentation.permissions.PermissionState
 import com.objmobile.presentation.permissions.PermissionsScreen
 import com.objmobile.presentation.permissions.PermissionsViewModel
+import com.objmobile.presentation.permissions.PermissionsViewModelFactory
 import com.objmobile.stablevpn.ui.theme.StableVPNTheme
 
 class MainActivity : ComponentActivity() {
@@ -28,13 +34,10 @@ class MainActivity : ComponentActivity() {
             }
         }
     })
+
     private val permissionsViewModel: PermissionsViewModel by viewModels(factoryProducer = {
-        object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return PermissionsViewModel(
-                    permissionChecker = { isVpnPermissionGranted() }) as T
-            }
-        }
+        val permissionManager = PermissionFactory.createPermissionManager(this@MainActivity)
+        PermissionsViewModelFactory(permissionManager)
     })
 
     // Register for VPN permission result
@@ -42,7 +45,19 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            permissionsViewModel.setPermissionGranted()
+            permissionsViewModel.setVpnPermissionGranted() // After VPN permission is granted, check notification permission
+            requestNotificationPermissionIfNeeded()
+        } else {
+            permissionsViewModel.setPermissionDenied()
+        }
+    }
+
+    // Register for notification permission result
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            permissionsViewModel.setNotificationPermissionGranted()
         } else {
             permissionsViewModel.setPermissionDenied()
         }
@@ -56,22 +71,42 @@ class MainActivity : ComponentActivity() {
                 AppContent(
                     vpnViewModel = vpnViewModel,
                     permissionsViewModel = permissionsViewModel,
-                    onRequestPermission = { requestVpnPermission() })
+                    onRequestPermission = { requestPermissions() })
             }
         }
     }
 
-    private fun isVpnPermissionGranted(): Boolean {
-        return VpnService.prepare(this) == null
+    private fun requestPermissions() {
+        permissionsViewModel.setPermissionRequesting() // First request VPN permission
+        val vpnIntent = VpnService.prepare(this.applicationContext)
+        if (vpnIntent != null) {
+            try {
+                vpnPermissionLauncher.launch(vpnIntent)
+            } catch (e: Exception) {
+                Log.d(
+                    "MainActivity",
+                    "requestPermissions: error ${e.message}"
+                ) // Handle any potential issues with launching VPN permission dialog
+                permissionsViewModel.setPermissionDenied()
+            }
+        } else { // VPN permission already granted, check notification permission
+            permissionsViewModel.setVpnPermissionGranted()
+            requestNotificationPermissionIfNeeded()
+        }
     }
 
-    private fun requestVpnPermission() {
-        permissionsViewModel.setPermissionRequesting()
-        val intent = VpnService.prepare(this)
-        if (intent != null) {
-            vpnPermissionLauncher.launch(intent)
-        } else { // Permission already granted
-            permissionsViewModel.setPermissionGranted()
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                permissionsViewModel.setNotificationPermissionGranted()
+            }
+        } else { // No notification permission needed on older versions
+            permissionsViewModel.setNotificationPermissionGranted()
         }
     }
 }

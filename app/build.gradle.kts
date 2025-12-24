@@ -1,5 +1,3 @@
-import org.gradle.kotlin.dsl.implementation
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -39,7 +37,9 @@ android {
 dependencies {
     implementation(project(":app:presentation"))
     implementation(project(":app:domain"))
-    implementation(project(":app:data"))
+    implementation(project(":app:data")) // Permissions module dependencies
+    implementation(project(":permissions:domain"))
+    implementation(project(":permissions:data"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

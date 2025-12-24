@@ -34,6 +34,18 @@
             </intent-filter>
         </activity>
 
+        <!-- VPN Service placeholder - will be implemented when VPN functionality is added -->
+        <!-- 
+        <service
+            android:name=".vpn.VpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+        -->
+
     </application>
 
 </manifest>
