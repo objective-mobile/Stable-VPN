@@ -7,9 +7,4 @@ class StableVpnApplication : Application() {
     val vpnInitialization by lazy {
         StableVpnInitialization(this)
     }
-
-    override fun onCreate() {
-        super.onCreate()
-        vpnInitialization.initialize()
-    }
 }
