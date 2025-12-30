@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -10,10 +11,10 @@ android {
 
     defaultConfig {
         applicationId = "com.objmobile.stablevpn"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.1"
+        versionCode = 4
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,7 +60,8 @@ dependencies {
     implementation(project(":app:data")) // Permissions module dependencies
     implementation(project(":permissions:domain"))
     implementation(project(":permissions:data"))
-
+    implementation(project(":countries:domain"))
+    implementation(project(":countries:data"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -76,4 +78,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.firestore)
 }

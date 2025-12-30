@@ -16,6 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.google.firebase.firestore.FirebaseFirestore
+import com.objmobile.countries.data.datasource.FirestoreCountryDataSource
+import com.objmobile.countries.data.repository.FirebaseCountryRepository
 import com.objmobile.data.BaseVpnRepository
 import com.objmobile.data.PermissionFactory
 import com.objmobile.domain.PermissionState
@@ -30,7 +33,10 @@ class MainActivity : ComponentActivity() {
     private val vpnViewModel: VpnViewModel by viewModels(factoryProducer = {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return VpnViewModel(BaseVpnRepository(this@MainActivity)) as T
+                return VpnViewModel(
+                    BaseVpnRepository(this@MainActivity),
+                    FirebaseCountryRepository(FirestoreCountryDataSource(FirebaseFirestore.getInstance()))
+                ) as T
             }
         }
     })
