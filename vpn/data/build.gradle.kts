@@ -23,7 +23,15 @@ android {
         externalNativeBuild {
             cmake {
                 //arguments+= "-DCMAKE_VERBOSE_MAKEFILE=1"
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                )
+                cppFlags += listOf("-std=c++17", "-frtti", "-fexceptions")
+                abiFilters += setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
             }
+        }
+        ndk {
+            abiFilters += setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
     }
 
@@ -50,19 +58,31 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
         }
-    }
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("x86", "x86_64", "armeabi-v7a", "arm64-v8a")
-            isUniversalApk = true
+        debug {
+            isMinifyEnabled = false
         }
     }
 
     packaging {
         jniLibs {
             useLegacyPackaging = true
+            keepDebugSymbols += "**/*.so"
+            pickFirsts += "**/libc++_shared.so"
+            pickFirsts += "**/libovpnexec.so"
+            pickFirsts += "**/libopenvpn.so"
+            pickFirsts += "**/libosslspeedtest.so"
+            pickFirsts += "**/libosslutil.so"
+            pickFirsts += "**/libovpn3.so"
+            pickFirsts += "**/libovpnutil.so"
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
+    sourceSets {
+        getByName("main") { // Include the native executables as JNI libs
+            jniLibs.srcDirs("src/main/jniLibs")
         }
     }
 
@@ -108,7 +128,83 @@ android.libraryVariants.all(object : Action<LibraryVariant> {
 
         variant.registerJavaGeneratingTask(task, sourceDir)
     }
-})
+}) // Ensure all native libraries are included in the AAR
+tasks.register<Copy>("copyNativeExecutables") { // Don't depend on build tasks to avoid circular dependency
+    from(layout.buildDirectory.dir("intermediates/cxx")) { // Include all native libraries and executables from CXX build output
+        include("**/obj/**/libovpnexec.so")
+        include("**/obj/**/libopenvpn.so")
+        include("**/obj/**/libosslspeedtest.so")
+        include("**/obj/**/libosslutil.so")
+        include("**/obj/**/libovpn3.so")
+        include("**/obj/**/libovpnutil.so")
+        include("**/obj/**/pie_openvpn.*") // Include any other .so files that might be generated
+        include("**/obj/**/*.so")
+    }
+    into(layout.projectDirectory.dir("src/main/jniLibs")) // Handle duplicates by keeping the first one found
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    eachFile { // Extract ABI from path like: Debug/4h5s4u5e/obj/arm64-v8a/libovpnexec.so
+        val abiMatch = Regex(".*/obj/([^/]+)/.*").find(path)
+        if (abiMatch != null) {
+            val abi = abiMatch.groupValues[1]
+            path = "$abi/${name}"
+        }
+    }
+    includeEmptyDirs = false
+
+    doFirst {
+        println("Copying native libraries from CXX build output to jniLibs...") // Clean existing jniLibs to avoid stale files
+        val jniLibsDir = layout.projectDirectory.dir("src/main/jniLibs").asFile
+        if (jniLibsDir.exists()) {
+            jniLibsDir.deleteRecursively()
+        }
+        jniLibsDir.mkdirs()
+    }
+
+    doLast {
+        println("Native libraries copied successfully")
+    }
+} // Hook the copy task to run after native build completes
+tasks.whenTaskAdded {
+    if (name.startsWith("externalNativeBuild")) {
+        finalizedBy("copyNativeExecutables")
+    }
+} // Task to verify native libraries are present
+tasks.register("verifyNativeLibs") {
+    dependsOn("copyNativeExecutables")
+
+    doLast {
+        val jniLibsDir = layout.projectDirectory.dir("src/main/jniLibs")
+        val expectedLibs = listOf(
+            "libovpnexec.so",
+            "libopenvpn.so",
+            "libosslspeedtest.so",
+            "libosslutil.so",
+            "libovpn3.so",
+            "libovpnutil.so"
+        )
+        val abis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+
+        println("Verifying native libraries...")
+
+        abis.forEach { abi ->
+            val abiDir = jniLibsDir.dir(abi)
+            if (abiDir.asFile.exists()) {
+                println("ABI: $abi")
+                expectedLibs.forEach { lib ->
+                    val libFile = abiDir.file(lib)
+                    if (libFile.asFile.exists()) {
+                        println("  ✓ $lib (${libFile.asFile.length()} bytes)")
+                    } else {
+                        println("  ✗ $lib (missing)")
+                    }
+                }
+            } else {
+                println("ABI directory missing: $abi")
+            }
+        }
+    }
+}
 
 dependencies {
     // https://maven.google.com/web/index.html

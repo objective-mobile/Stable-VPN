@@ -5,12 +5,12 @@
 
 package de.blinkt.openvpn.core;
 
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -26,9 +26,9 @@ public class VpnStatus {
 
     private static final LinkedList<LogItem> logbuffer;
 
-    private static Vector<LogListener> logListener;
-    private static Vector<StateListener> stateListener;
-    private static Vector<ByteCountListener> byteCountListener;
+    private static final Vector<LogListener> logListener;
+    private static final Vector<StateListener> stateListener;
+    private static final Vector<ByteCountListener> byteCountListener;
 
     private static String mLaststatemsg = "";
 
@@ -151,41 +151,14 @@ public class VpnStatus {
         VpnStatus.trafficHistory = trafficHistory;
     }
 
-
-    public enum LogLevel {
-        INFO(2),
-        ERROR(-2),
-        WARNING(1),
-        VERBOSE(3),
-        DEBUG(4);
-
-        protected int mValue;
-
-        LogLevel(int value) {
-            mValue = value;
+    public synchronized static void addByteCountListener(ByteCountListener bcl) {
+        TrafficHistory.LastDiff diff = trafficHistory.getLastDiff(null);
+        try {
+            bcl.updateByteCount(diff.getIn(), diff.getOut(), diff.getDiffIn(), diff.getDiffOut());
+        } catch (Exception e) {
+            Log.d("VpnStatus", ": " + e.getMessage());
         }
-
-        public int getInt() {
-            return mValue;
-        }
-
-        public static LogLevel getEnumByValue(int value) {
-            switch (value) {
-                case 2:
-                    return INFO;
-                case -2:
-                    return ERROR;
-                case 1:
-                    return WARNING;
-                case 3:
-                    return VERBOSE;
-                case 4:
-                    return DEBUG;
-
-                default:
-                    return null;
-            }
-        }
+        byteCountListener.add(bcl);
     }
 
     // keytool -printcert -jarfile de.blinkt.openvpn_85.apk
@@ -257,10 +230,28 @@ public class VpnStatus {
         logListener.remove(ll);
     }
 
-    public synchronized static void addByteCountListener(ByteCountListener bcl) {
-        TrafficHistory.LastDiff diff = trafficHistory.getLastDiff(null);
-        bcl.updateByteCount(diff.getIn(), diff.getOut(), diff.getDiffIn(),diff.getDiffOut());
-        byteCountListener.add(bcl);
+    synchronized static void newLogItem(LogItem logItem, boolean cachedLine) {
+        Log.d("VpnStatus", ": " + logItem);
+        if (cachedLine) {
+            logbuffer.addFirst(logItem);
+        } else {
+            logbuffer.addLast(logItem);
+            if (mLogFileHandler != null) {
+                Message m = mLogFileHandler.obtainMessage(LogFileHandler.LOG_MESSAGE, logItem);
+                mLogFileHandler.sendMessage(m);
+            }
+        }
+
+        if (logbuffer.size() > MAXLOGENTRIES + MAXLOGENTRIES / 2) {
+            while (logbuffer.size() > MAXLOGENTRIES)
+                logbuffer.removeFirst();
+            if (mLogFileHandler != null)
+                mLogFileHandler.sendMessage(mLogFileHandler.obtainMessage(LogFileHandler.TRIM_LOG_FILE));
+        }
+
+        for (LogListener ll : logListener) {
+            ll.newLog(logItem);
+        }
     }
 
     public synchronized static void removeByteCountListener(ByteCountListener bcl) {
@@ -422,27 +413,15 @@ public class VpnStatus {
         newLogItem(logItem, false);
     }
 
+    public static synchronized void updateByteCount(long in, long out) {
+        TrafficHistory.LastDiff diff = trafficHistory.add(in, out);
 
-    synchronized static void newLogItem(LogItem logItem, boolean cachedLine) {
-        if (cachedLine) {
-            logbuffer.addFirst(logItem);
-        } else {
-            logbuffer.addLast(logItem);
-            if (mLogFileHandler != null) {
-                Message m = mLogFileHandler.obtainMessage(LogFileHandler.LOG_MESSAGE, logItem);
-                mLogFileHandler.sendMessage(m);
+        for (ByteCountListener bcl : byteCountListener) {
+            try {
+                bcl.updateByteCount(in, out, diff.getDiffIn(), diff.getDiffOut());
+            } catch (Exception e) {
+                Log.e("VpnStatus", ": " + e.getMessage());
             }
-        }
-
-        if (logbuffer.size() > MAXLOGENTRIES + MAXLOGENTRIES / 2) {
-            while (logbuffer.size() > MAXLOGENTRIES)
-                logbuffer.removeFirst();
-            if (mLogFileHandler != null)
-                mLogFileHandler.sendMessage(mLogFileHandler.obtainMessage(LogFileHandler.TRIM_LOG_FILE));
-        }
-
-        for (LogListener ll : logListener) {
-            ll.newLog(logItem);
         }
     }
 
@@ -475,11 +454,39 @@ public class VpnStatus {
     }
 
 
-    public static synchronized void updateByteCount(long in, long out) {
-        TrafficHistory.LastDiff diff = trafficHistory.add(in, out);
+    public enum LogLevel {
+        INFO(2),
+        ERROR(-2),
+        WARNING(1),
+        VERBOSE(3),
+        DEBUG(4);
 
-        for (ByteCountListener bcl : byteCountListener) {
-            bcl.updateByteCount(in, out, diff.getDiffIn(), diff.getDiffOut());
+        private final int mValue;
+
+        LogLevel(int value) {
+            mValue = value;
+        }
+
+        public int getInt() {
+            return mValue;
+        }
+
+        public static LogLevel getEnumByValue(int value) {
+            switch (value) {
+                case 2:
+                    return INFO;
+                case -2:
+                    return ERROR;
+                case 1:
+                    return WARNING;
+                case 3:
+                    return VERBOSE;
+                case 4:
+                    return DEBUG;
+
+                default:
+                    return null;
+            }
         }
     }
 }

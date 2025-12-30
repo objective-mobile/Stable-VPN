@@ -10,6 +10,7 @@ import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,7 +73,7 @@ public class OpenVPNThread implements Runnable {
             Log.i(TAG, "OpenVPN process exited");
         } catch (Exception e) {
             VpnStatus.logException("Starting OpenVPN Thread", e);
-            Log.e(TAG, "OpenVPNThread Got " + e.toString());
+            Log.e(TAG, "OpenVPNThread Got " + e);
         } finally {
             int exitvalue = 0;
             try {
@@ -199,6 +200,7 @@ public class OpenVPNThread implements Runnable {
                 }
             }
         } catch (InterruptedException | IOException e) {
+            Log.d("OpenVPNThread", ": startOpenVPNThreadArgs " + e.getMessage());
             VpnStatus.logException("Error reading from output of OpenVPN process", e);
             stopProcess();
         }
@@ -210,6 +212,15 @@ public class OpenVPNThread implements Runnable {
         // Hack until I find a good way to get the real library path
         String applibpath = argv[0].replaceFirst("/cache/.*$", "/lib");
 
+        // For Android P+, if we're using libovpnexec.so from native lib dir,
+        // extract the lib path from the executable path
+        if (argv[0].contains("nativeLibraryDir") || argv[0].contains("/lib/")) {
+            // Extract the directory containing the native libraries
+            File execFile = new File(argv[0]);
+            applibpath = execFile.getParent();
+            Log.d("OpenVPNThread", "Using native lib path from executable: " + applibpath);
+        }
+
         String lbpath = pb.environment().get("LD_LIBRARY_PATH");
         if (lbpath == null)
             lbpath = applibpath;
@@ -219,6 +230,8 @@ public class OpenVPNThread implements Runnable {
         if (!applibpath.equals(mNativeDir)) {
             lbpath = mNativeDir + ":" + lbpath;
         }
+
+        Log.d("OpenVPNThread", "Final LD_LIBRARY_PATH: " + lbpath);
         return lbpath;
     }
 }
