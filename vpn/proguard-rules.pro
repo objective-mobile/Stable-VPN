@@ -19,3 +19,38 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# VPN Data Module - Exclude from obfuscation
+# Keep all OpenVPN classes and their members
+-keep class de.blinkt.openvpn.** { *; }
+
+# Keep all SpongyCastle cryptography classes
+-keep class org.spongycastle.** { *; }
+
+# Keep all native methods for JNI calls
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Keep AIDL interfaces
+-keep class * implements android.os.IInterface { *; }
+
+# Keep VPN service related classes
+-keep class * extends android.net.VpnService { *; }
+-keep class * extends android.app.Service { *; }
+
+# Keep all public methods and fields for VPN functionality
+-keepclassmembers class de.blinkt.openvpn.** {
+    public *;
+    protected *;
+}
+
+# Keep serialization related methods
+-keepclassmembers class * implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}

@@ -19,3 +19,20 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Exclude :vpn:data module from obfuscation
+# Keep all classes in OpenVPN packages
+-keep class de.blinkt.openvpn.** { *; }
+-keep class org.spongycastle.** { *; }
+
+# Keep all native methods (JNI)
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Keep VPN-related AIDL interfaces
+-keep class * implements android.os.IInterface { *; }
+
+# Preserve VPN service classes and their methods
+-keep class * extends android.net.VpnService { *; }
+-keep class * extends android.app.Service { *; }
