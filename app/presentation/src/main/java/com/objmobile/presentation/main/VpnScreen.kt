@@ -21,7 +21,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.objmobile.domain.AdvertisingConfiguration
 import com.objmobile.domain.StableVpnStatus
+import com.objmobile.presentation.AdUnitIds
+import com.objmobile.presentation.BannerAd
 import com.objmobile.presentation.components.VpnMainButton
 import com.objmobile.presentation.components.VpnStatusText
 import com.objmobile.presentation.components.VpnTopAppBar
@@ -82,6 +85,7 @@ fun StableVpnHomeScreen(
                 Spacer(Modifier.height(40.dp))
                 VpnStatusText(status = status)
                 Spacer(Modifier.height(20.dp))
+                BannerAd(AdUnitIds.BANNER_AD_UNIT_ID, AdvertisingConfiguration())
             }
         }
     }

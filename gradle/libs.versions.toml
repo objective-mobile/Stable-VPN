@@ -33,6 +33,8 @@ mpandroidchart = "v3.1.0"
 square-okhttp = "4.10.0"
 firebase-bom = "34.7.0"
 google-services = "4.4.4"
+admob = "24.9.0"
+playServicesAdsApi = "24.9.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -76,6 +78,8 @@ square-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref =
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+google-admob = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "admob" }
+play-services-ads-api = { group = "com.google.android.gms", name = "play-services-ads-api", version.ref = "playServicesAdsApi" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
