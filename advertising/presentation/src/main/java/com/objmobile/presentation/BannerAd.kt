@@ -14,7 +14,7 @@ import com.objmobile.domain.AdvertisingConfiguration
 
 @Composable
 fun BannerAd(
-    adUnitId: String, configuration: AdvertisingConfiguration, modifier: Modifier = Modifier
+    configuration: AdvertisingConfiguration, modifier: Modifier = Modifier
 ) {
     if (!configuration.enableAd || !configuration.showing) {
         return
@@ -23,7 +23,8 @@ fun BannerAd(
     val adView = remember {
         AdView(context).apply {
             setAdSize(AdSize.BANNER)
-            this.adUnitId = adUnitId
+            this.adUnitId =
+                if (configuration.isDebug) configuration.advertisingUnit.adUnitDebugId else configuration.advertisingUnit.adUnitReleaseId
         }
     }
 

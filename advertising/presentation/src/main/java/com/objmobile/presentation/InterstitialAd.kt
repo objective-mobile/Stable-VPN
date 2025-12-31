@@ -1,20 +1,13 @@
 package com.objmobile.presentation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
@@ -24,13 +17,11 @@ import com.objmobile.domain.AdvertisingConfiguration
 
 @Composable
 fun InterstitialAd(
-    adUnitId: String,
     configuration: AdvertisingConfiguration,
     onAdShown: () -> Unit = {},
     onAdFailedToLoad: () -> Unit = {},
     onAdDismissed: () -> Unit = {},
     modifier: Modifier = Modifier,
-    buttonText: String = "Show Ad"
 ) {
     if (!configuration.enableAd || !configuration.showing) {
         return
@@ -46,7 +37,10 @@ fun InterstitialAd(
         isAdReady = false
         val adRequest = AdRequest.Builder().build()
         InterstitialAd.load(
-            context, adUnitId, adRequest, object : InterstitialAdLoadCallback() {
+            context,
+            if (configuration.isDebug) configuration.advertisingUnit.adUnitDebugId else configuration.advertisingUnit.adUnitReleaseId,
+            adRequest,
+            object : InterstitialAdLoadCallback() {
                 override fun onAdFailedToLoad(adError: LoadAdError) {
                     isLoading = false
                     interstitialAd = null
@@ -82,30 +76,11 @@ fun InterstitialAd(
 
     DisposableEffect(Unit) {
         loadInterstitialAd()
+        if (context is androidx.activity.ComponentActivity) {
+            interstitialAd?.show(context)
+        }
         onDispose {
             interstitialAd = null
-        }
-    }
-
-    Box(
-        modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center
-    ) {
-        Button(
-            onClick = {
-                interstitialAd?.let { ad ->
-                    if (context is androidx.activity.ComponentActivity) {
-                        ad.show(context)
-                    }
-                } ?: loadInterstitialAd()
-            }, enabled = isAdReady && !isLoading, modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = when {
-                    isLoading -> "Loading..."
-                    isAdReady -> buttonText
-                    else -> "Load Ad"
-                }
-            )
         }
     }
 }

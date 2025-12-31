@@ -16,18 +16,25 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.firestore.FirebaseFirestore
 import com.objmobile.countries.data.datasource.FirestoreCountryDataSource
 import com.objmobile.countries.data.repository.FirebaseCountryRepository
 import com.objmobile.data.BaseVpnRepository
 import com.objmobile.data.PermissionFactory
+import com.objmobile.domain.AdvertisingConfiguration
+import com.objmobile.domain.AdvertisingUnit
 import com.objmobile.domain.PermissionState
+import com.objmobile.presentation.BuildConfig
+import com.objmobile.presentation.InterstitialAdScreen
 import com.objmobile.presentation.main.VpnScreen
 import com.objmobile.presentation.main.VpnViewModel
 import com.objmobile.presentation.permissions.PermissionsScreen
 import com.objmobile.presentation.permissions.PermissionsViewModel
 import com.objmobile.presentation.permissions.PermissionsViewModelFactory
 import com.objmobile.stablevpn.ui.theme.StableVPNTheme
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 class MainActivity : ComponentActivity() {
     private val vpnViewModel: VpnViewModel by viewModels(factoryProducer = {
@@ -68,10 +75,23 @@ class MainActivity : ComponentActivity() {
             permissionsViewModel.setPermissionDenied()
         }
     }
+    private val advertisingScreen by lazy {
+        InterstitialAdScreen(
+            this, AdvertisingConfiguration(
+                isDebug = BuildConfig.DEBUG, showing = false, advertisingUnit = AdvertisingUnit(
+                    "ca-app-pub-8487249106338936/3822811382",
+                    adUnitDebugId = "ca-app-pub-3940256099942544/1033173712"
+                )
+            )
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        advertisingScreen
+        vpnViewModel.interstitialConfiguration.onEach {
+            advertisingScreen.show()
+        }.launchIn(lifecycleScope)
         setContent {
             StableVPNTheme {
                 AppContent(
