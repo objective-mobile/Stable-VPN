@@ -33,6 +33,7 @@ mpandroidchart = "v3.1.0"
 square-okhttp = "4.10.0"
 firebase-bom = "34.7.0"
 google-services = "4.4.4"
+crashlytics-gradle = "3.0.6"
 admob = "24.9.0"
 playServicesAdsApi = "24.9.0"
 
@@ -78,6 +79,7 @@ square-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref =
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
 google-admob = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "admob" }
 play-services-ads-api = { group = "com.google.android.gms", name = "play-services-ads-api", version.ref = "playServicesAdsApi" }
 
@@ -87,3 +89,4 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.2.0" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics-gradle" }
