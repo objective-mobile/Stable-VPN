@@ -21,8 +21,8 @@ android {
         applicationId = "com.objmobile.stablevpn"
         minSdk = 23
         targetSdk = 36
-        versionCode = 7
-        versionName = "2026.1.2"
+        versionCode = 8
+        versionName = "2026.1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("Boolean", "IS_ADVERTISING", true.toString())
