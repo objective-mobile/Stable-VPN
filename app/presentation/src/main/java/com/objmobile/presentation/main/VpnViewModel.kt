@@ -22,7 +22,9 @@ import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 class VpnViewModel(
-    private val vpnRepository: VpnRepository, private val countryRepository: CountryRepository
+    private val vpnRepository: VpnRepository,
+    private val countryRepository: CountryRepository,
+    private val enableAd: Boolean = true
 ) : ViewModel() {
     val vpnStatus: StateFlow<StableVpnStatus> = vpnRepository.stableVpnStatus.onEach { status ->
         if (status is StableVpnStatus.Connected || status is StableVpnStatus.Error) {
@@ -33,6 +35,7 @@ class VpnViewModel(
     )
     val bannerConfiguration: StateFlow<AdvertisingConfiguration> = MutableStateFlow(
         AdvertisingConfiguration(
+            enableAd = this.enableAd,
             isDebug = BuildConfig.DEBUG,
             advertisingUnit = AdvertisingUnit("ca-app-pub-8487249106338936/7396398341")
         )

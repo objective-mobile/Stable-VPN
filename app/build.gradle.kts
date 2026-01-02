@@ -18,6 +18,7 @@ android {
         versionName = "2026.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("Boolean", "IS_ADVERTISING", true.toString())
     }
 
     signingConfigs {
@@ -52,6 +53,7 @@ android {
     buildFeatures {
         compose = true
         aidl = true
+        buildConfig = true
     }
 }
 

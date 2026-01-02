@@ -32,6 +32,7 @@ import com.objmobile.presentation.main.VpnViewModel
 import com.objmobile.presentation.permissions.PermissionsScreen
 import com.objmobile.presentation.permissions.PermissionsViewModel
 import com.objmobile.presentation.permissions.PermissionsViewModelFactory
+import com.objmobile.stablevpn.BuildConfig.IS_ADVERTISING
 import com.objmobile.stablevpn.ui.theme.StableVPNTheme
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -41,8 +42,11 @@ class MainActivity : ComponentActivity() {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return VpnViewModel(
-                    BaseVpnRepository(this@MainActivity),
-                    FirebaseCountryRepository(FirestoreCountryDataSource(FirebaseFirestore.getInstance()))
+                    BaseVpnRepository(this@MainActivity), FirebaseCountryRepository(
+                        FirestoreCountryDataSource(
+                            FirebaseFirestore.getInstance()
+                        )
+                    ), IS_ADVERTISING
                 ) as T
             }
         }
@@ -78,7 +82,10 @@ class MainActivity : ComponentActivity() {
     private val advertisingScreen by lazy {
         InterstitialAdScreen(
             this, AdvertisingConfiguration(
-                isDebug = BuildConfig.DEBUG, showing = false, advertisingUnit = AdvertisingUnit(
+                isDebug = BuildConfig.DEBUG,
+                showing = false,
+                enableAd = IS_ADVERTISING,
+                advertisingUnit = AdvertisingUnit(
                     "ca-app-pub-8487249106338936/3822811382",
                     adUnitDebugId = "ca-app-pub-3940256099942544/1033173712"
                 )
