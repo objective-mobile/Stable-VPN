@@ -21,7 +21,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.objmobile.domain.AdvertisingConfiguration
+import com.objmobile.domain.AdvertisingUnit
 import com.objmobile.domain.StableVpnStatus
+import com.objmobile.presentation.BannerAd
 import com.objmobile.presentation.components.VpnMainButton
 import com.objmobile.presentation.components.VpnStatusText
 import com.objmobile.presentation.components.VpnTopAppBar
@@ -30,9 +33,9 @@ import com.objmobile.presentation.ui.theme.StableVPNTheme
 @Composable
 fun VpnScreen(viewModel: VpnViewModel) {
     val status by viewModel.vpnStatus.collectAsState()
+    val bannerConfiguration by viewModel.bannerConfiguration.collectAsState()
     StableVpnHomeScreen(
-        status = status,
-        onMainButtonClick = {
+        status = status, bannerConfiguration, onMainButtonClick = {
             when (status) {
                 is StableVpnStatus.Connected -> viewModel.disconnectVpn()
                 is StableVpnStatus.Disconnected -> viewModel.connectVpn()
@@ -40,17 +43,16 @@ fun VpnScreen(viewModel: VpnViewModel) {
                 is StableVpnStatus.Pause -> viewModel.connectVpn()
                 is StableVpnStatus.Connecting -> viewModel.disconnectVpn()
             }
-        },
-        onLocationClick = { /* TODO: Implement location selection */ },
-        onSettingsClick = { /* TODO: Implement settings */ })
+        })
 }
 
 @Composable
 fun StableVpnHomeScreen(
     status: StableVpnStatus,
-    onMainButtonClick: () -> Unit,
-    onLocationClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    bannerConfiguration: AdvertisingConfiguration = AdvertisingConfiguration(
+        advertisingUnit = AdvertisingUnit("")
+    ),
+    onMainButtonClick: () -> Unit = {},
 ) {
     val backgroundGradient = Brush.verticalGradient(
         listOf(
@@ -82,6 +84,7 @@ fun StableVpnHomeScreen(
                 Spacer(Modifier.height(40.dp))
                 VpnStatusText(status = status)
                 Spacer(Modifier.height(20.dp))
+                BannerAd(bannerConfiguration)
             }
         }
     }
@@ -93,7 +96,10 @@ fun StableVpnHomeScreen(
 private fun Preview_Disconnected() {
     StableVPNTheme {
         StableVpnHomeScreen(
-            status = StableVpnStatus.Disconnected, onMainButtonClick = {})
+            status = StableVpnStatus.Disconnected, AdvertisingConfiguration(
+                advertisingUnit = AdvertisingUnit("")
+            )
+        )
     }
 }
 
@@ -102,7 +108,8 @@ private fun Preview_Disconnected() {
 private fun Preview_Connecting() {
     StableVPNTheme {
         StableVpnHomeScreen(
-            status = StableVpnStatus.Connecting, onMainButtonClick = {})
+            status = StableVpnStatus.Connecting
+        )
     }
 }
 

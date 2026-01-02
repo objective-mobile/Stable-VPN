@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -13,10 +14,11 @@ android {
         applicationId = "com.objmobile.stablevpn"
         minSdk = 23
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.2"
+        versionCode = 7
+        versionName = "2026.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("Boolean", "IS_ADVERTISING", true.toString())
     }
 
     signingConfigs {
@@ -51,6 +53,7 @@ android {
     buildFeatures {
         compose = true
         aidl = true
+        buildConfig = true
     }
 }
 
@@ -62,6 +65,8 @@ dependencies {
     implementation(project(":permissions:data"))
     implementation(project(":countries:domain"))
     implementation(project(":countries:data"))
+    implementation(project(":advertising:domain"))
+    implementation(project(":advertising:presentation"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -82,4 +87,6 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.google.admob)
 }

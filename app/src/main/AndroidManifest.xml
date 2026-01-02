@@ -9,7 +9,6 @@
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
@@ -35,7 +34,7 @@
         </activity>
 
         <!-- VPN Service placeholder - will be implemented when VPN functionality is added -->
-        <!-- 
+        <!--
         <service
             android:name=".vpn.VpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"
@@ -45,7 +44,9 @@
             </intent-filter>
         </service>
         -->
-
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-8487249106338936~5561298848" />
     </application>
 
 </manifest>
